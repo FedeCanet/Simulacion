@@ -26,39 +26,73 @@ class Paciente(Process):
 
     # modelamos el comportamiento de una entidad
     def run(self, mu):
-        print(now(), "Arribo cliente ", self.id)
-        # intenta tomar el recurso G.server
-        yield request, self, G.server
-        # en este punto el server ya fue asignado a la entidad
-        t = random.expovariate(1./mu)
-        print(now(), "Cliente ", self.id, " comienza servicio (tiempo servicio: ", t, ")")
-        # planificamos el fin de servicio
-        yield hold, self, t
-        # en este punto el servicio ya fue ejecutado, resta liberar el server
-        yield release, self, G.server
-        print(now(), "Fin Cliente ", self.id)
-        d = random.uniform(0,1)
-        print(d)
+        print(now(), "Arribo paciente ", self.id)
+        tiempoEsperaRevisionInicial = 3
+
+        # Paciente entra al triage
+        print('Paciente ', self.id, ' entra al triage en el tiempo ', now())
+        yield hold, self, tiempoEsperaRevisionInicial
+        print('Paciente ', self.id, ' sale del triage y es derivado en el tiempo ', now())
+
+        d = random.uniform(a=0, b=1)
         if(d >= 0 and d < 0.3):
-            print('Ambulatorio')
+            print('Paciente ', self.id, ' derivado a servicio ambulatorio en tiempo ', now())
+            yield request, self, G.serverAt
+            print('Paciente ', self.id, ' comienza a atenderse en servicio ambulatorio en tiempo ', now())
+
+            tiempoServicioAt = abs(random.normalvariate(15, 6))
+
+            yield hold, self, tiempoServicioAt
+            print('Paciente ', self.id, ' finaliza tratamiento en tiempo ', now())
+
+            yield release, self, G.serverAt
+
         elif(d >= 0.3 and d < 0.5):
-            print('Rayos x')
+            print('Paciente ', self.id, ' derivado a rayos x en tiempo ', now())
+            yield request, self, G.serverAt
+            print('Paciente ', self.id, ' comienza a atenderse en rayos x en tiempo ', now())
+
+            tiempoServicioRrx = abs(random.normalvariate(15, 3))
+
+            yield hold, self, tiempoServicioRrx
+            print('Paciente ', self.id, ' finaliza tratamiento en tiempo ', now())
+
+            yield release, self, G.serverAt
+
         elif(d >= 0.5 and d < 0.55):
-            print('Hospital')
+            print('Paciente ', self.id, ' es derivado al hospital en tiempo ', now())
+
         elif(d >= 0.55 and d < 1):
-            print('Laboratorio')
+            print('Paciente ', self.id, ' derivado al servicio de laboratorio en tiempo ', now())
+            yield request, self, G.serverAt
+            print('Paciente ', self.id, ' comienza a atenderse en el servicio de laboratorio en tiempo ', now())
+
+            tiempoServicioRrx = abs(random.normalvariate(30, 6))
+
+            yield hold, self, tiempoServicioRrx
+            print('Paciente ', self.id, ' finaliza exámenes en tiempo ', now())
+
+            yield release, self, G.serverAt
 
 
 
 class G:
-    server = 'dummy'
+    serverAt = 'At. Ambulatoria'
+
+    serverRrx = 'Rayos X'
+
+    serverH = 'Hospital'
+
+    serverLab = 'Serv. de laboratorio'
 
 def model(c, N, lamb, mu, maxtime, rvseed):
     # inicialización del motor de simulación y semilla
     initialize()
     random.seed(rvseed)
+    PROCmonitor = Monitor()
     # definimos el recurso G.server con "c" unidades (será un parámetro de la simulación)
-    G.server = Resource(c)
+    G.serverAt = Resource(c, 'At. Ambulatoria')
+    #G.
 
     #  ejecución
     s = Arribos()
@@ -67,5 +101,5 @@ def model(c, N, lamb, mu, maxtime, rvseed):
 
 # Experimento
 # lamb=tiempo entre arribos (media); mu=tiempo de servicio (media)
-model(c=4, N=100, lamb=15, mu=3,
-      maxtime=480,rvseed=234)
+model(c=1, N=100, lamb=15, mu=3,
+      maxtime=480, rvseed=234)
