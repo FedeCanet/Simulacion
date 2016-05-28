@@ -49,7 +49,7 @@ class Paciente(Process):
 
         elif(d >= 0.3 and d < 0.5):
             print('Paciente ', self.id, ' derivado a rayos x en tiempo ', now())
-            yield request, self, G.serverAt
+            yield request, self, G.serverRrx
             print('Paciente ', self.id, ' comienza a atenderse en rayos x en tiempo ', now())
 
             tiempoServicioRrx = abs(random.normalvariate(15, 3))
@@ -57,14 +57,16 @@ class Paciente(Process):
             yield hold, self, tiempoServicioRrx
             print('Paciente ', self.id, ' finaliza tratamiento en tiempo ', now())
 
-            yield release, self, G.serverAt
+            yield release, self, G.serverRrx
 
         elif(d >= 0.5 and d < 0.55):
             print('Paciente ', self.id, ' es derivado al hospital en tiempo ', now())
+            yield request, self, G.serverH
+            yield release, self, G.serverH
 
         elif(d >= 0.55 and d < 1):
             print('Paciente ', self.id, ' derivado al servicio de laboratorio en tiempo ', now())
-            yield request, self, G.serverAt
+            yield request, self, G.serverLab
             print('Paciente ', self.id, ' comienza a atenderse en el servicio de laboratorio en tiempo ', now())
 
             tiempoServicioRrx = abs(random.normalvariate(30, 6))
@@ -72,7 +74,7 @@ class Paciente(Process):
             yield hold, self, tiempoServicioRrx
             print('Paciente ', self.id, ' finaliza exámenes en tiempo ', now())
 
-            yield release, self, G.serverAt
+            yield release, self, G.serverLab
 
 
 
@@ -89,10 +91,13 @@ def model(c, N, lamb, mu, maxtime, rvseed):
     # inicialización del motor de simulación y semilla
     initialize()
     random.seed(rvseed)
-    PROCmonitor = Monitor()
+    procmonitor = Monitor()
     # definimos el recurso G.server con "c" unidades (será un parámetro de la simulación)
-    G.serverAt = Resource(c, 'At. Ambulatoria')
-    #G.
+    G.serverAt = Resource(c, 'Emergencia', 'At. Ambulatoria')
+    G.serverRrx = Resource(c, 'Emergencia', 'Rayos X')
+    G.serverH = Resource(c, 'Emergencia', 'Hospital')
+    G.serverLab = Resource(c, 'Emergencia', 'Serv. de laboratorio')
+
 
     #  ejecución
     s = Arribos()
