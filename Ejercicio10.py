@@ -88,7 +88,15 @@ class Paciente(Process):
                       ' en tiempo ', now())
                 monitorEmergencia.observe(G.serverLab)
                 yield request, self, G.serverLab
-                print('Paciente ', self.id, ' derivado a ', G.serverH.unitName, ' en tiempo ', now())
+                print('Paciente ', self.id, ' derivado a ', G.serverLab.unitName, ' en tiempo ', now())
+
+                tiempoServicioLab = abs(random.normalvariate(30, 6))
+
+                yield hold, self, tiempoServicioLab
+                print('Paciente ', self.id, ' finaliza tratamiento en tiempo ', now())
+                yield release, self, G.serverLab
+
+                G.totalLab += monitorEmergencia.count()
 
 
 
@@ -114,6 +122,20 @@ class Paciente(Process):
             yield release, self, G.serverLab
 
             G.totalLab += monitorEmergencia.count()
+
+            derivadoA = random.uniform(a=0, b=0)
+
+            # COMIENZA segundas conexiones, desde rayos x a las diferentes secciones según las probabilidades de la letra
+            if 0 <= derivadoA < 0.1:
+                print('Paciente ', self.id, ' es derivado desde ', G.serverLab.unitName, 'a ', G.serverH.unitName,
+                      ' en tiempo ', now())
+
+                monitorEmergencia.observe(G.serverH)
+                yield request, self, G.serverH
+                print('Paciente ', self.id, ' derivado a ', G.serverH.unitName, ' en tiempo ', now())
+                yield release, self, G.serverH
+
+                G.totalH += monitorEmergencia.count()
 
 
 class G:
