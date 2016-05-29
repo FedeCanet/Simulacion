@@ -35,8 +35,13 @@ class Paciente(Process):
         print('Paciente ', self.id, ' sale del triage y es derivado en el tiempo ', now())
 
         d = random.uniform(a=0, b=1)
+
+        monitorEmergencia = Monitor(name='Monitor Emergencia')
+
         if(d >= 0 and d < 0.3):
             print('Paciente ', self.id, ' derivado a servicio ambulatorio en tiempo ', now())
+
+            monitorEmergencia.observe(G.serverAt)
             yield request, self, G.serverAt
             print('Paciente ', self.id, ' comienza a atenderse en servicio ambulatorio en tiempo ', now())
 
@@ -47,8 +52,11 @@ class Paciente(Process):
 
             yield release, self, G.serverAt
 
+            G.totalAt += monitorEmergencia.count()
+
         elif(d >= 0.3 and d < 0.5):
             print('Paciente ', self.id, ' derivado a rayos x en tiempo ', now())
+            monitorEmergencia.observe(G.serverRrx)
             yield request, self, G.serverRrx
             print('Paciente ', self.id, ' comienza a atenderse en rayos x en tiempo ', now())
 
@@ -59,33 +67,43 @@ class Paciente(Process):
 
             yield release, self, G.serverRrx
 
+            G.totalRrx += monitorEmergencia.count()
+
         elif(d >= 0.5 and d < 0.55):
             print('Paciente ', self.id, ' es derivado al hospital en tiempo ', now())
+            monitorEmergencia.observe(G.serverH)
             yield request, self, G.serverH
             yield release, self, G.serverH
 
+            G.totalH += monitorEmergencia.count()
+
         elif(d >= 0.55 and d < 1):
             print('Paciente ', self.id, ' derivado al servicio de laboratorio en tiempo ', now())
+            monitorEmergencia.observe(G.serverLab)
             yield request, self, G.serverLab
             print('Paciente ', self.id, ' comienza a atenderse en el servicio de laboratorio en tiempo ', now())
 
-            tiempoServicioRrx = abs(random.normalvariate(30, 6))
+            tiempoServicioLab = abs(random.normalvariate(30, 6))
 
-            yield hold, self, tiempoServicioRrx
+            yield hold, self, tiempoServicioLab
             print('Paciente ', self.id, ' finaliza exámenes en tiempo ', now())
 
             yield release, self, G.serverLab
 
-
+            G.totalLab += monitorEmergencia.count()
 
 class G:
     serverAt = 'At. Ambulatoria'
+    totalAt = 0
 
     serverRrx = 'Rayos X'
+    totalRrx = 0
 
     serverH = 'Hospital'
+    totalH = 0
 
     serverLab = 'Serv. de laboratorio'
+    totalLab = 0
 
 def model(c, N, lamb, mu, maxtime, rvseed):
     # inicialización del motor de simulación y semilla
@@ -93,16 +111,25 @@ def model(c, N, lamb, mu, maxtime, rvseed):
     random.seed(rvseed)
     procmonitor = Monitor()
     # definimos el recurso G.server con "c" unidades (será un parámetro de la simulación)
-    G.serverAt = Resource(c, 'Emergencia', 'At. Ambulatoria')
-    G.serverRrx = Resource(c, 'Emergencia', 'Rayos X')
-    G.serverH = Resource(c, 'Emergencia', 'Hospital')
-    G.serverLab = Resource(c, 'Emergencia', 'Serv. de laboratorio')
-
+    G.serverAt = Resource(c, 'Emergencia', 'At. Ambulatoria', monitored=True, monitorType=Monitor, qType=FIFO)
+    G.serverRrx = Resource(c, 'Emergencia', 'Rayos X', monitored=True, monitorType=Monitor, qType=FIFO)
+    G.serverH = Resource(c, 'Emergencia', 'Hospital', monitored=True, monitorType=Monitor, qType=FIFO)
+    G.serverLab = Resource(c, 'Emergencia', 'Serv. de laboratorio', monitored=True, monitorType=Monitor, qType=FIFO)
 
     #  ejecución
     s = Arribos()
     activate(s, s.run(N, lamb, mu))
     simulate(until=maxtime)
+
+    print('-----------------------------------------------------------------------------------------')
+    print('\n')
+    print('Estadísticas finales: ')
+    print('\n')
+    print('Total atendidos en servicio ambulatorio: ', G.totalAt)
+    print('Total atendidos en rayos x: ', G.totalRrx)
+    print('Total atendidos en hospital: ', G.totalH)
+    print('Total atendidos en laboratorio: ', G.totalLab)
+
 
 # Experimento
 # lamb=tiempo entre arribos (media); mu=tiempo de servicio (media)
