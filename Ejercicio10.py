@@ -6,6 +6,7 @@
 from SimPy.Simulation import *
 import random
 
+
 class Arribos(Process):
     # genera arribos aleatorios
     def run(self, N, lamb, mu):
@@ -14,15 +15,16 @@ class Arribos(Process):
             a = Paciente(str(i))  # str(i) es el identificador de cliente
             activate(a, a.run(mu))
             # calcula el tiempo del próximo arrivo...
-            t = random.expovariate(1./lamb)
+            t = random.expovariate(1. / lamb)
             # ... y lo planifica para el futuro (tiempo actual de la simulación + t
             yield hold, self, t
+
 
 class Paciente(Process):
     # se implementa init a los efectos de asignar un identificador a esta instancia de cliente
     def __init__(self, id):
         Process.__init__(self)
-        self.id=id
+        self.id = id
 
     # modelamos el comportamiento de una entidad
     def run(self, mu):
@@ -34,11 +36,11 @@ class Paciente(Process):
         yield hold, self, tiempoEsperaRevisionInicial
         print('Paciente ', self.id, ' sale del triage y es derivado en el tiempo ', now())
 
-        d = random.uniform(a=0, b=1)
+        derivadoA = random.uniform(a=0, b=1)
 
         monitorEmergencia = Monitor(name='Monitor Emergencia')
 
-        if(d >= 0 and d < 0.3):
+        if 0 <= derivadoA < 0.3:
             print('Paciente ', self.id, ' derivado a servicio ambulatorio en tiempo ', now())
 
             monitorEmergencia.observe(G.serverAt)
@@ -49,12 +51,11 @@ class Paciente(Process):
 
             yield hold, self, tiempoServicioAt
             print('Paciente ', self.id, ' finaliza tratamiento en tiempo ', now())
-
             yield release, self, G.serverAt
 
             G.totalAt += monitorEmergencia.count()
 
-        elif(d >= 0.3 and d < 0.5):
+        elif 0.3 <= derivadoA < 0.5:
             print('Paciente ', self.id, ' derivado a rayos x en tiempo ', now())
             monitorEmergencia.observe(G.serverRrx)
             yield request, self, G.serverRrx
@@ -64,12 +65,34 @@ class Paciente(Process):
 
             yield hold, self, tiempoServicioRrx
             print('Paciente ', self.id, ' finaliza tratamiento en tiempo ', now())
-
             yield release, self, G.serverRrx
 
             G.totalRrx += monitorEmergencia.count()
 
-        elif(d >= 0.5 and d < 0.55):
+            derivadoA = random.uniform(a=0, b=0)
+
+            #COMIENZA segundas conexiones, desde rayos x a las diferentes secciones según las probabilidades de la letra
+            if 0 <= derivadoA < 0.3:
+                print('Paciente ', self.id, ' es derivado desde ', G.serverRrx.unitName, 'a ', G.serverH.unitName,
+                      ' en tiempo ', now())
+
+                monitorEmergencia.observe(G.serverH)
+                yield request, self, G.serverH
+                print('Paciente ', self.id, ' derivado a ', G.serverH.unitName, ' en tiempo ', now())
+                yield release, self, G.serverH
+
+                G.totalH += monitorEmergencia.count()
+
+            elif 0.3 <= derivadoA < 0.4:
+                print('Paciente ', self.id, ' es derivado desde ', G.serverRrx.unitName, 'a ', G.serverLab.unitName,
+                      ' en tiempo ', now())
+                monitorEmergencia.observe(G.serverLab)
+                yield request, self, G.serverLab
+                print('Paciente ', self.id, ' derivado a ', G.serverH.unitName, ' en tiempo ', now())
+
+
+
+        elif 0.5 <= derivadoA < 0.55:
             print('Paciente ', self.id, ' es derivado al hospital en tiempo ', now())
             monitorEmergencia.observe(G.serverH)
             yield request, self, G.serverH
@@ -77,7 +100,7 @@ class Paciente(Process):
 
             G.totalH += monitorEmergencia.count()
 
-        elif(d >= 0.55 and d < 1):
+        elif 0.55 <= derivadoA < 1:
             print('Paciente ', self.id, ' derivado al servicio de laboratorio en tiempo ', now())
             monitorEmergencia.observe(G.serverLab)
             yield request, self, G.serverLab
@@ -92,6 +115,7 @@ class Paciente(Process):
 
             G.totalLab += monitorEmergencia.count()
 
+
 class G:
     serverAt = 'At. Ambulatoria'
     totalAt = 0
@@ -104,6 +128,7 @@ class G:
 
     serverLab = 'Serv. de laboratorio'
     totalLab = 0
+
 
 def model(c, N, lamb, mu, maxtime, rvseed):
     # inicialización del motor de simulación y semilla
