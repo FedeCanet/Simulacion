@@ -2,10 +2,9 @@
 
 # ejemplo sistema abierto básico
 # versión que genera los arribos de N entidades
-
 from SimPy.Simulation import *
 import random
-
+import matplotlib.pyplot as plt
 
 class Arribos(Process):
     # genera arribos aleatorios
@@ -137,6 +136,8 @@ def model(c, N, lamb, mu, maxtime, rvseed):
     activate(s, s.run(N, lamb, mu))
     simulate(until=maxtime)
 
+    #%matplotlib inline
+
     print('-----------------------------------------------------------------------------------------')
     print('\n')
     print('Estadísticas finales: ')
@@ -147,13 +148,19 @@ def model(c, N, lamb, mu, maxtime, rvseed):
     print('Desvio estandar: ', G.serverAt.actMon.var())
     print('Promedio: ', G.serverAt.actMon.mean())
 
+    plt.plot(G.serverAt.waitMon.tseries(), G.serverAt.waitMon.yseries())
+    plt.show()
     print('\n')
+
 
     print('Total atendidos en rayos x: ', G.serverRrx.actMon.total(),
           ' tiempo promedio de servicio', (G.serverRrx.actMon.timeAverage() * 480)/G.serverRrx.actMon.total(),
           ' tiempo promedio en la cola', (G.serverRrx.waitMon.timeAverage() * 480) / G.serverRrx.actMon.total())
     print('Desvio estandar: ', G.serverRrx.actMon.var())
     print('Promedio: ', G.serverRrx.actMon.mean())
+
+    plt.plot(G.serverRrx.waitMon.tseries(), G.serverRrx.waitMon.yseries())
+    plt.show()
 
     print('\n')
 
@@ -163,6 +170,9 @@ def model(c, N, lamb, mu, maxtime, rvseed):
     print('Desvio estandar: ', G.serverH.actMon.var())
     print('Promedio: ', G.serverH.actMon.mean())
 
+    plt.plot(G.serverH.waitMon.tseries(), G.serverH.waitMon.yseries())
+    plt.show()
+
     print('\n')
 
     print('Total atendidos en laboratorio: ', G.serverLab.actMon.total(),' ', G.serverLab.waitMon.count(),
@@ -171,6 +181,8 @@ def model(c, N, lamb, mu, maxtime, rvseed):
     print('Desvio estandar: ', G.serverLab.actMon.var())
     print('Promedio: ', G.serverLab.actMon.mean())
 
+    plt.plot(G.serverLab.waitMon.tseries(), G.serverLab.waitMon.yseries())
+    plt.show()
 
 
 # Experimento
