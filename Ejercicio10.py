@@ -2,9 +2,11 @@
 
 # ejemplo sistema abierto básico
 # versión que genera los arribos de N entidades
-from SimPy.Simulation import *
-import random
+
+
 import matplotlib.pyplot as plt
+from SimPy.Simulation import *
+
 
 class Arribos(Process):
     # genera arribos aleatorios
@@ -62,7 +64,7 @@ class Paciente(Process):
             print('Paciente ', self.id, ' finaliza tratamiento en tiempo ', now())
             yield release, self, G.serverRrx
 
-            derivadoA = random.uniform(a=0, b=0)
+            derivadoA = random.uniform(a=0, b=1)
 
             #COMIENZA segundas conexiones, desde rayos x a las diferentes secciones según las probabilidades de la letra
             if 0 <= derivadoA < 0.3:
@@ -105,7 +107,7 @@ class Paciente(Process):
 
             yield release, self, G.serverLab
 
-            derivadoA = random.uniform(a=0, b=0)
+            derivadoA = random.uniform(a=0, b=1)
 
             # COMIENZA segundas conexiones, desde rayos x a las diferentes secciones según las probabilidades de la letra
             if 0 <= derivadoA < 0.1:
